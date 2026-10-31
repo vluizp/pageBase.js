@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste PageBase</title>
+    <style>
+    
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        
+        #root {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #ffffff;
+            gap:10px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .clickMe,
+        #clickMe  {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4f46e5;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            width:230px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+        }
+        .clickMe:hover,
+        #clickMe:hover {
+            background-color: #4338ca;
+        }
+        .clickMe:active,
+        #clickMe:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="button-title">Contador de Cliques com PageBase.js</div>
+        <!-- O botão será inserido aqui pelo script -->
+    </div>
+
+
+    <script type="module">
+        import { PageBase } from "../infra/PageBase.js";
+        import { Render } from "../infra/Render.js";
+
+        function Button(state = { class:"clickMe", contador: 0, id: "clickMe", titulo:"button"}) {
+            let btn = document.createElement("button");
+            btn.innerHTML = state.titulo;
+            btn.setAttribute("id", state.id);
+            btn.setAttribute("class",state.class);
+            return {
+                setTitulo:(titulo) => btn.innerHTML = titulo,
+                notify: () => {
+                    state.contador++;
+                    btn.innerHTML = `clickMe clicks(${state.contador})`;
+                }, 
+                getBtn: () => btn,
+                reset:() => {
+                    state.contador = 0;
+                    btn.innerHTML = `Contador Resetado!`;    
+                }
+            }
+        }
+
+        let state = { contador: 0, id: "clickMe", titulo:"clickMe!"};
+        
+        let closureButton = Button(state);
+        let closureButton2 = Button({class:"clickMe", id:"reset", titulo:"Reset"})
+        let page = new PageBase([{ id: "clickMe", component: closureButton.getBtn() },{ id: "reset", component: closureButton2.getBtn()}]);
+
+        page.addComponent("root");
+
+        // Anexa o botões no elemento root
+        page.getComponent("root").append(closureButton.getBtn());
+        page.getComponent("root").append(closureButton2.getBtn());
+
+        //adiciona topicos 
+        page.addTopic("clickMe.click");
+        page.addTopic("clickMe.reset");
+
+        page.addObserver("clickMe.click", {notify: closureButton.notify });
+        page.addObserver("clickMe.reset", {notify: closureButton.reset })
+        
+        // Instala o listener de click no botão1: incrementa o contador
+        page.install("clickMe", "click", (e) => {
+            page.notify("clickMe.click", { local: true });
+        });
+
+        // Instala o listener de click no botão2: reseta o contador
+        page.install("reset", "click", (e) => {
+            page.notify("clickMe.reset", { local: true });
+        });
+    </script>
+</body>
+</html>
